@@ -1,21 +1,18 @@
  ---
-  - name: Provision an EC2 Instance
-    hosts: all
-    connection: local
-    gather_facts: False
-    tags: provisioning
-
-    vars:
+ - name: Provision an EC2 Instance
+   hosts: all
+   connection: local
+   gather_facts: False
+   tags: provisioning
+   vars:
       instance_type: t2.micro
       security_group: default
       image: ami-061eb2b23f9f8839c
       region: ap-southeast-1
       keypair: kubeha
       count: 1
-
-    tasks:
-
-      - name: Create New security group with below given name
+   tasks:
+     - name: Create New security group with below given name
         local_action:
           module: ec2_group
           name: "{{ security_group }}"
