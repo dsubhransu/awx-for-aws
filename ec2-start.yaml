@@ -1,0 +1,35 @@
+ ---
+  - name: Provision an EC2 Instance
+    hosts: all
+    connection: local
+    gather_facts: False
+    tags: provisioning
+
+    vars:
+      instance_type: t2.micro
+      security_group: default
+      image: ami-061eb2b23f9f8839c
+      region: ap-southeast-1
+      keypair: kubeha
+      count: 1
+
+    tasks:
+
+      - name: Create New security group with below given name
+        local_action:
+          module: ec2_group
+          name: "{{ security_group }}"
+          description: Security Group for Newly Created EC2 Instance
+          region: "{{ region }}”2
+          rules:
+            - proto: tcp
+              from_port: 22
+              to_port: 22
+              cidr_ip: 0.0.0.0/0
+            - proto: tcp
+              from_port: 80
+              to_port: 80
+              cidr_ip: 0.0.0.0/0
+          rules_egress:
+            - proto: all
+              cidr_ip: 0.0.0.0/0
