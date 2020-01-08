@@ -1,0 +1,13 @@
+---
+- hosts: all
+  connection: local
+  gather_facts: false
+  vars:
+    region: 'ap-southeast-1'
+  tasks:
+    - name: Run instances using Instance ID's
+      ec2:
+        region: "{{ region }}"
+        wait: true
+        instance_ids: [ 'i-00bc706423402047b' ]
+        state: running
