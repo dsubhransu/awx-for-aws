@@ -40,7 +40,7 @@
         from: "{{ sender }}"
         to: "{{ receiver }}"
         # - "{{ receiver }}"
-        #- "{{ receiver2 }}"
+        # - "{{ receiver2 }}"
         subject: Notification; SSL-certificate 
         body: "{{ result.msg }}"
         charset: us-ascii
