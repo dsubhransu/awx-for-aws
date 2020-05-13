@@ -1,0 +1,48 @@
+---
+- hosts: "{{ ansible_hosts }}"
+  tasks:
+    - name: expiry date
+      command: sh /var/lib/awx/projects/playbook/ssl-check.sh -p "{{ port }}" -s "{{ url }}"
+      register: test
+    - name: get output
+      debug:
+        var: "test.stdout_lines[-1].split(' ')[-1]"
+      register: expiry
+    - name: get int
+      set_fact:
+        int="{{test.stdout_lines[-1].split(' ')[-1]}}"
+    - name: days
+      debug:
+        msg: "{{ int }}"    
+      register: days
+
+    - name: alert cert expires
+      debug:
+        msg: cert expires for {{ url }} in {{ days }} days.
+      when: days == 15
+      debug:
+        msg: cert expires for {{ url }} in {{ days }} days.
+      when: days == 7
+      debug:
+        msg: attention cert expires for {{ url }} in {{ days }} days. You need to renew your certfication
+      when: days == 1
+      debug: 
+        msg: certificate for {{ url }} still have to expire in {{ days }} days.
+      when: days == days   
+      register: result
+    
+    - name: Sending an e-mail using Gmail SMTP servers
+      mail:
+        host: "{{ ses_host }}"
+        port: "{{ ses_port }}"
+        username: "{{ ses_user }}"
+        password: "{{ ses_password }}"
+        from: "{{ sender }}"
+        to: "{{ receiver }}"
+        # - "{{ receiver }}"
+        #- "{{ receiver2 }}"
+        subject: Notification; SSL-certificate 
+        body: "{{ result.msg }}"
+        charset: us-ascii
+        secure: starttls 
+      delegate_to: localhost
