@@ -1,0 +1,33 @@
+---
+- hosts: localhost
+  tasks:
+    - name: expiry date
+      command: sh /var/lib/awx/projects/playbook/ssl-check.sh -p "{{ port }}" -s "{{ url }}"
+      register: test
+    - name: get output
+      debug:
+        var: "test.stdout_lines[-1].split(' ')[-1]"
+      register: expiry
+    - name: get int
+      set_fact:
+        int="{{test.stdout_lines[-1].split(' ')[-1]}}"
+    - name: days
+      debug:
+        msg: "{{ int | int }}"    
+      register: expiry_days
+    - name: Sending an e-mail using Gmail SMTP servers
+      mail:
+        host: "{{ ses_host }}"
+        port: "{{ ses_port }}"
+        username: "{{ ses_user }}"
+        password: "{{ ses_passwd }}"
+        from: "{{ sender }}"
+        to: "{{ receiver }}"
+        # - "{{ receiver1 }}"
+        # - "{{ receiver2 }}"
+        subject: Notification; SSL-certificate 
+        body: " Certificate for {{ url }} is going to expire in {{ expiry_days.msg }} days"
+        charset: utf-8
+        secure: starttls 
+      when: expiry_days.msg | int == 1 or expiry_days.msg | int == 7 or expiry_days.msg | int == 37
+      delegate_to: localhost
