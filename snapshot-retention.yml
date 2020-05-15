@@ -1,0 +1,38 @@
+---
+- hosts: "{{ ansible_hosts }}"
+  gather_facts: yes
+  tasks:
+    - name: snapshot info
+      ec2_snapshot_info:
+        ec2_region: "{{ region }}" 
+        aws_access_key: "{{ access }}" 
+        aws_secret_key: "{{ secret }}"
+        owner_ids: 
+          - "{{ idowner }}"  
+      register: result      
+    - name: local date
+      debug:
+        msg: "{{ ansible_date_time.epoch }}"
+      register: value  
+    - name: snapshot date
+      debug:
+        msg: "{{ result.snapshots[-1].start_time }}" 
+      register: snap
+    - name: age of snapshot in days
+      debug:
+        msg: "{{ (value|int - snap|int)/(86400|round|int) }}"
+      register: msg      
+      #  - name: Delete Vol Snapshot
+      # ec2_snapshot:
+      #  aws_access_key: "{{ access }}"
+      #  aws_secret_key: "{{ secret }}"
+      #  ec2_region: "{{ region }}"
+        #instance_id: "{{ id }}"
+        #device_name: {{ vol }}
+        # state: absent 
+        # when: msg.stdout | int >= 7  
+    - name: delete
+      local_action:
+        module: ec2_snapshot
+        state: absent      
+      when: msg.msg | int >= 7 
