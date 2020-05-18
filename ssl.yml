@@ -1,0 +1,46 @@
+---
+- hosts: "{{ ansible_hosts }}"
+  tasks:
+    - name: Gather information abbout ssl certificate
+      command: sh <path to the file> -p "{{ port }}" -s "{{ url }}"
+      register: output
+    - name: Get expiry date of certificate
+      debug:
+        var: "outputt.stdout_lines[-1].split(' ')[-1]"   
+      register: expiry    
+    - name: Set facts about output
+      set_fact: 
+        int="{{output.stdout_lines[-1].split(' ')[-1]}}"
+    - name: Register how many days left to expire
+      debug:
+        msg: "{{ int }}"    
+      register: days
+    - name: Alert on certificate expiry
+      debug:
+        msg: Certificate expires for {{ url }} in {{ days.msg }} days.
+      when: days == 15
+      debug:
+        msg: Certificate expires for {{ url }} in {{ days.msg }} days.
+      when: days == 7
+      debug:
+        msg: Attention Certificate expires for {{ url }} in {{ days.msg }} days. You need to renew your certficate.
+      when: days == 1
+      debug: 
+        msg: Certificate for {{ url }} still have to expire in {{ days.msg }} days.
+      when: days == days   
+      register: result
+    - name: Sending an e-mail using Gmail SMTP servers
+      mail:
+        host: "{{ ses_host }}"
+        port: "{{ ses_port }}"
+        username: "{{ ses_user }}"
+        password: "{{ ses_password }}"
+        from: "{{ sender }}"
+        to: "{{ receiver }}"
+        # - "{{ receiver1 }}"
+        # - "{{ receiver2 }}"
+        subject: Notification; SSL-certificate 
+        body: "{{ result.msg }}"
+        charset: us-ascii
+        secure: starttls 
+      delegate_to: localhost 
