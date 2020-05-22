@@ -1,0 +1,40 @@
+---
+- hosts: localhost
+  tasks:
+    - name: Get a cert from an https port
+      get_certificate:
+        host: "www.google.com"
+        port: 443
+      delegate_to: localhost
+      run_once: true
+      register: cert
+
+    - name: How many days until cert expires
+      debug:
+        msg: "cert expires in: {{ expire_days }} days."
+      vars:
+        expire_days: "{{ (( cert.not_after | to_datetime('%Y%m%d%H%M%SZ')) - (ansible_date_time.iso8601 | to_datetime('%Y-%m-%dT%H:%M:%SZ')) ).days }}"
+        #  when: cert | int <= 35
+      register: test
+
+    - name: showing report
+      debug:
+       var: cert
+
+    - name: Ensure email identity exists
+      aws_ses_identity:
+        identity: 
+        aws_region: ap-south-1
+        state: present
+    - name: sending mail
+      local_action:
+        module: mail
+        host: email-smtp.ap-south-1.amazonaws.com
+        port: 25
+        username: 
+        password: ]
+        subject: "Summary Mail"
+        to: 
+        body: "{{ mail_body }}"
+        secure: starttls
+      run_once: True
