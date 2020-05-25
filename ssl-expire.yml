@@ -1,0 +1,55 @@
+---
+- hosts: localhost
+  vars_files: domains
+  vars:
+    expiry_days_list : []
+    expiry_date_list : []
+    mail_body_list: []
+    final_list : []
+  tasks:
+    - name: Insert details as variable
+      copy:
+        content: "{{ url }}"
+        dest: /var/lib/awx/projects/playbook/domains
+     
+    - name: Scan url
+      shell: ./sslcheck -p "{{ port }}" -s "{{ item }}" |grep "{{ item }}" |awk {'print $6'}
+      with_items:
+        "{{ list }}"
+      register: days
+
+    - name: Get Expiry_date & set fact for expiry date
+      set_fact:
+        expiry_date_list: "{{ days.results }}" 
+  
+   
+    - name: Get Expiry days as message & set fact on days 
+      set_fact:
+        expiry_days_list: "{{ expiry_days_list }} + [ '{{ item.item }}' ' ' '{{ item.stdout }}'' ''days' ]"
+      with_items:
+        - "{{ expiry_date_list }}"
+
+   
+    - name: filtering the output according to condition
+      set_fact:
+        final_list : "{{ expiry_days_list | select ('search','( 1 days| 7 days| 15 days)+')  | list }}"
+
+    
+    - name: formatting output of mail body by joining all 
+      set_fact:
+        mail_body_list: "{{ final_list | join('\n') }}"
+
+    - name: Sending an e-mail using Amazon SES Service
+      mail:
+        host: "{{ ses_host }}"
+        port: "{{ ses_port }}"
+        username: "{{ ses_user }}"
+        password: "{{ ses_passwd }}"
+        from: "{{ sender }}"
+        to: "{{ receiver }}"
+        subject: SSL-Notification
+        body: SSL expiration days left for {{ mail_body_list }}
+        charset: us-ascii
+        secure: starttls 
+      when: mail_body_list|length > 0
+      delegate_to: localhost 
