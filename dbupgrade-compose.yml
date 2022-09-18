@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  dbupgrade:
+    image: docker.whatsapp.biz/coreapp:v${WA_API_VERSION}
+    restart: on-failure
+    command: ["/opt/whatsapp/bin/wait_on_mysql.sh", "/opt/whatsapp/bin/launch_within_docker.sh"]
+    env_file:
+      - db.env
+    environment:
+      WA_DB_UPGRADE: 1
+      #network_mode: bridge
+    cap_drop:
+      - MKNOD
